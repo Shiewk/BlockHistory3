@@ -1,0 +1,6 @@
+# BlockHistory Permissions
+| Permission                   | Description                                                                                                                                            | Default               | Child permissions         |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------|---------------------------|
+| blockhistory.command.stats   | Allows the player to use /blockhistory stats                                                                                                           | Only server operators | blockhistory.command.root |
+| blockhistory.command.history | Allows the player to use /blockhistory history                                                                                                         | Only server operators | blockhistory.command.root |
+| blockhistory.command.root    | Allows the player to access the root /blockhistory command node (you can't do anything with this unless you have one of the other permissions as well) | Only server operators | *None*                    |

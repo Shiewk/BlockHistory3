@@ -1,0 +1,22 @@
+name: BlockHistory
+version: '${version}'
+main: de.shiewk.blockhistory.v3.BlockHistoryPlugin
+api-version: '1.21'
+prefix: BlockHistory
+load: STARTUP
+authors: [ Shiewk ]
+description: BlockHistory is a Paper plugin that helps you to find griefers more easily.
+permissions:
+  blockhistory.command.root:
+    default: op
+    description: Player can access root BlockHistory command node
+  blockhistory.command.stats:
+    default: op
+    description: Player can view the BlockHistory stats
+    children:
+      blockhistory.command.root: true
+  blockhistory.command.history:
+    default: op
+    description: Player can search the history of a block
+    children:
+      blockhistory.command.root: true
