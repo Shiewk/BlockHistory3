@@ -20,6 +20,7 @@ public final class PlayerUtil {
     }
 
     public static Component playerName(UUID uuid) {
+        if (uuid == null) return text("Unknown Player");
         Player player;
         if ((player = Bukkit.getPlayer(uuid)) != null){
             return player.displayName();
