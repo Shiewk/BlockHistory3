@@ -41,7 +41,7 @@ public final class HistoryManager {
                 1,
                 1,
                 TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(0xff),
+                new ArrayBlockingQueue<>(1000),
                 new NamedLoggingThreadFactory(
                         threadName,
                         threadPriority,

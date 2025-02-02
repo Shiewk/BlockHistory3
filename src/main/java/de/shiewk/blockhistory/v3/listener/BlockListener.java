@@ -26,6 +26,7 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.UUID;
+import java.util.concurrent.RejectedExecutionException;
 
 public final class BlockListener implements Listener {
 
@@ -155,7 +156,7 @@ public final class BlockListener implements Listener {
             }
             signData.append(serializer.serialize(line));
         }
-        BlockHistoryPlugin.instance().getHistoryManager().addHistoryElement(new BlockHistoryElement(
+        addEntryToManager(new BlockHistoryElement(
                 block.getWorld(),
                 blockLocation.getBlockX(),
                 blockLocation.getBlockY(),
@@ -169,7 +170,11 @@ public final class BlockListener implements Listener {
     }
 
     private void addEntryToManager(BlockHistoryElement element){
-        BlockHistoryPlugin.instance().getHistoryManager().addHistoryElement(element);
+        try {
+            BlockHistoryPlugin.instance().getHistoryManager().addHistoryElement(element);
+        } catch (RejectedExecutionException e){
+            BlockHistoryPlugin.logger().warn("Too many actions are happening at the same time, skipping one");
+        }
     }
 
     private void createAndAddEntry(BlockHistoryType type, Player player, Block block) {
