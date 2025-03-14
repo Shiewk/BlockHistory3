@@ -41,6 +41,10 @@ public final class BlockHistoryCommand {
                         .requires(CommandUtil.requirePermission("blockhistory.command.stats"))
                         .executes(this::statsCommand)
                 )
+                .then(literal("diskspace")
+                        .requires(CommandUtil.requirePermission("blockhistory.command.diskspace"))
+                        .executes(this::approximateDiskSpace)
+                )
                 .then(literal("history")
                         .requires(CommandUtil.requirePermission("blockhistory.command.history"))
                         .then(argument("location", ArgumentTypes.blockPosition())
@@ -53,9 +57,45 @@ public final class BlockHistoryCommand {
                 .build();
     }
 
+    private int approximateDiskSpace(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        sender.sendMessage(CHAT_PREFIX.append(
+                text("Approximating disk space usage, please wait... (this could take a while)", COLOR_PRIMARY)
+        ));
+        try {
+            instance().getHistoryManager().approximateDiskSpaceBytes().whenComplete((result, throwable) -> {
+                if (throwable != null){
+                    sender.sendMessage(CHAT_PREFIX.append(
+                            text("This operation failed, please check the server logs.", COLOR_FAIL)
+                    ));
+                    StringWriter strw = new StringWriter();
+                    throwable.printStackTrace(new PrintWriter(strw));
+
+                    logger().warn("Exception while approximating disk space:");
+                    for (String s : strw.toString().split("\n")) {
+                        logger().warn(s);
+                    }
+                } else {
+                    long bytes = result.getDiskSpaceBytes();
+                    long directories = result.getDirectoryCount();
+                    long files = result.getFileCount();
+                    sender.sendMessage(CHAT_PREFIX.append(
+                            text("Block history files use approximately ", COLOR_PRIMARY)
+                                    .append(text(UnitUtil.formatDataSize(bytes), COLOR_SECONDARY))
+                                    .append(text(" of disk space. "))
+                                    .append(text("(%s directories with %s files in total)".formatted(directories, files), NamedTextColor.GRAY))
+                    ));
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            sender.sendMessage(text("The searching system is currently too busy, please try again later.", COLOR_FAIL));
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
     private int statsCommand(CommandContext<CommandSourceStack> context) {
         CommandSender sender = context.getSource().getSender();
-        StatManager statManager = BlockHistoryPlugin.instance().getStatManager();
+        StatManager statManager = instance().getStatManager();
         long millisSinceStart = statManager.getTimeMsSinceStart();
         sender.sendMessage(CHAT_PREFIX.append(
                 text("The plugin has started up ", COLOR_PRIMARY)
@@ -88,9 +128,9 @@ public final class BlockHistoryCommand {
             StringWriter strw = new StringWriter();
             e.printStackTrace(new PrintWriter(strw));
 
-            BlockHistoryPlugin.logger().warn("Exception while getting usable disk space:");
+            logger().warn("Exception while getting usable disk space:");
             for (String s : strw.toString().split("\n")) {
-                BlockHistoryPlugin.logger().warn(s);
+                logger().warn(s);
             }
         }
         return Command.SINGLE_SUCCESS;
@@ -125,9 +165,9 @@ public final class BlockHistoryCommand {
                     StringWriter strw = new StringWriter();
                     throwable.printStackTrace(new PrintWriter(strw));
 
-                    BlockHistoryPlugin.logger().warn("Exception while searching block at world {} x {} y {} z {}:", searchedWorld, blockX, blockY, blockZ);
+                    logger().warn("Exception while searching block at world {} x {} y {} z {}:", searchedWorld, blockX, blockY, blockZ);
                     for (String s : strw.toString().split("\n")) {
-                        BlockHistoryPlugin.logger().warn(s);
+                        logger().warn(s);
                     }
                     sender.sendMessage(CHAT_PREFIX.append(text("An error occurred while searching, please check the server console.\n", COLOR_FAIL)));
                 } else {
@@ -151,7 +191,7 @@ public final class BlockHistoryCommand {
 
         @Override
         public void onNoFilePresent(FileNotFoundException e) {
-            BlockHistoryPlugin.logger().info("No file present");
+            logger().info("No file present");
         }
 
     }

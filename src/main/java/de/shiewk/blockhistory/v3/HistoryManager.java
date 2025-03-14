@@ -7,12 +7,13 @@ import de.shiewk.blockhistory.v3.util.BlockHistoryFileNames;
 import de.shiewk.blockhistory.v3.util.NamedLoggingThreadFactory;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -157,6 +158,63 @@ public final class HistoryManager {
                     }
                 }
             }
+        }
+    }
+
+    public CompletableFuture<DiskSpaceApproximationVisitor> approximateDiskSpaceBytes() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                DiskSpaceApproximationVisitor visitor = new DiskSpaceApproximationVisitor();
+                Files.walkFileTree(saveDirectory, visitor);
+                return visitor;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, readExecutor);
+    }
+
+    public static class DiskSpaceApproximationVisitor implements FileVisitor<Path> {
+
+        private long bytes = 0;
+        private long directories = 0;
+        private long files = 0;
+
+        public long getDiskSpaceBytes(){
+            return bytes;
+        }
+
+        public long getDirectoryCount() {
+            return directories;
+        }
+
+        public long getFileCount() {
+            return files;
+        }
+
+        @Override
+        public @NotNull FileVisitResult preVisitDirectory(Path dir, @NotNull BasicFileAttributes attrs) {
+            directories++;
+            bytes += dir.getFileName().toString().getBytes().length;
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public @NotNull FileVisitResult visitFile(Path file, @NotNull BasicFileAttributes attrs) {
+            files++;
+            bytes += file.getFileName().toString().getBytes().length;
+            bytes += file.toFile().length();
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public @NotNull FileVisitResult visitFileFailed(Path file, @NotNull IOException exc) throws IOException {
+            throw exc;
+        }
+
+        @Override
+        public @NotNull FileVisitResult postVisitDirectory(Path dir, @Nullable IOException exc) throws IOException {
+            if (exc != null) throw exc;
+            return FileVisitResult.CONTINUE;
         }
     }
 }

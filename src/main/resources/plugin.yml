@@ -20,3 +20,8 @@ permissions:
     description: Player can search the history of a block
     children:
       blockhistory.command.root: true
+  blockhistory.command.diskspace:
+    default: op
+    description: Player can approximate disk space usage
+    children:
+      blockhistory.command.root: true
