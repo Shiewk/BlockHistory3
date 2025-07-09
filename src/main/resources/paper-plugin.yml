@@ -6,6 +6,8 @@ prefix: BlockHistory
 load: STARTUP
 authors: [ Shiewk ]
 description: BlockHistory is a Paper plugin that helps you to find griefers more easily.
+folia-supported: true
+website: https://github.com/Shiewk/BlockHistory3
 permissions:
   blockhistory.command.root:
     default: op

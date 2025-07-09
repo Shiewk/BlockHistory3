@@ -89,9 +89,9 @@ public final class HistoryManager {
         logger.info("Shutdown finished ({}ms)", (System.nanoTime() - n) / 1000000);
     }
 
-    public CompletableFuture<Void> addHistoryElement(BlockHistoryElement element){
+    public void addHistoryElement(BlockHistoryElement element){
         Objects.requireNonNull(element);
-        return CompletableFuture.runAsync(() -> {
+        writeExecutor.execute(() -> {
             try {
                 byte[] saveData = element.saveData();
                 writeToDisk(
@@ -112,7 +112,7 @@ public final class HistoryManager {
                     BlockHistoryPlugin.logger().warn(s);
                 }
             }
-        }, writeExecutor);
+        });
     }
 
     private void writeToDisk(Path path, byte[] saveData) throws LowDiskSpaceException, IOException {
@@ -148,7 +148,7 @@ public final class HistoryManager {
                 while (true) {
                     try {
                         int b = dataIn.readUnsignedByte();
-                        BlockHistoryElement element = BlockHistoryElement.read(b, dataIn, world, location.getChunk().getX(), location.getChunk().getZ());
+                        BlockHistoryElement element = BlockHistoryElement.read(b, dataIn, world, getChunkX(location), getChunkZ(location));
                         if (element.x() == x && element.y() == y && element.z() == z){
                             callback.onElementFound(element);
                         }
@@ -159,6 +159,28 @@ public final class HistoryManager {
                 }
             }
         }
+    }
+
+    public static int getChunkZ(Location location) {
+        int pos;
+        if (location.getZ() < 0){
+            pos = ((location.getBlockZ() + 1) / 16) - 1;
+        } else {
+            pos = location.getBlockZ() / 16;
+        }
+
+        return pos;
+    }
+
+    public static int getChunkX(Location location) {
+        int pos;
+        if (location.getX() < 0){
+            pos = ((location.getBlockX() + 1) / 16) - 1;
+        } else {
+            pos = location.getBlockX() / 16;
+        }
+
+        return pos;
     }
 
     public CompletableFuture<DiskSpaceApproximationVisitor> approximateDiskSpaceBytes() {

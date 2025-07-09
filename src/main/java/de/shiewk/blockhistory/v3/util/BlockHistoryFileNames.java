@@ -1,6 +1,6 @@
 package de.shiewk.blockhistory.v3.util;
 
-import org.bukkit.Chunk;
+import de.shiewk.blockhistory.v3.HistoryManager;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -50,17 +50,7 @@ public final class BlockHistoryFileNames {
     public static Path encode(Path parentDirectory, Location location){
         // encoded string is 13 characters long
         World world = location.getWorld();
-        Chunk chunk = location.getChunk();
-        int chunkX = chunk.getX();
-        int chunkZ = chunk.getZ();
-        // 20 bytes
-        long packed = 0;
-
-        packed |= chunkX & 0b1111111111111111111L;
-        if (chunkX < 0) packed |= 0b10000000000000000000;
-
-        packed |= (chunkZ & 0b1111111111111111111L) << 20;
-        if (chunkZ < 0) packed |= 0b1000000000000000000000000000000000000000L;
+        long packed = getPackedPos(location);
 
         String encodedChunkFileName = new String(new char[]{
                 base32encode((short) (packed >> 35 & 0b11111)),
@@ -77,5 +67,20 @@ public final class BlockHistoryFileNames {
                 world.getWorldFolder().getName(),
                 encodedChunkFileName
         );
+    }
+
+    private static long getPackedPos(Location location) {
+        int chunkX = HistoryManager.getChunkX(location);
+        int chunkZ = HistoryManager.getChunkZ(location);
+
+        // 20 bits
+        long packed = 0;
+
+        packed |= chunkX & 0b1111111111111111111L;
+        if (chunkX < 0) packed |= 0b10000000000000000000;
+
+        packed |= (chunkZ & 0b1111111111111111111L) << 20;
+        if (chunkZ < 0) packed |= 0b1000000000000000000000000000000000000000L;
+        return packed;
     }
 }

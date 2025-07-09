@@ -2,6 +2,7 @@ package de.shiewk.blockhistory.v3;
 
 import de.shiewk.blockhistory.v3.command.BlockHistoryCommand;
 import de.shiewk.blockhistory.v3.listener.BlockListener;
+import de.shiewk.blockhistory.v3.util.SchedulerUtil;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -20,6 +21,19 @@ import java.nio.file.Path;
 import static net.kyori.adventure.text.Component.text;
 
 public final class BlockHistoryPlugin extends JavaPlugin {
+
+    public static final boolean isFolia;
+
+    static {
+        boolean folia;
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            folia = true;
+        } catch (ClassNotFoundException e) {
+            folia = false;
+        }
+        isFolia = folia;
+    }
 
     private static ComponentLogger LOGGER = null;
     private static BlockHistoryPlugin INSTANCE = null;
@@ -41,6 +55,7 @@ public final class BlockHistoryPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        LOGGER.info("Folia: {}", isFolia ? "yes" : "no");
         statManager = new StatManager();
         Path saveDirectory = Path.of(getDataFolder().getPath(), "history");
         try {
@@ -52,7 +67,7 @@ public final class BlockHistoryPlugin extends JavaPlugin {
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, this::registerCommands);
 
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(this, BlockListener::clearCache, 6000, 6000);
+        SchedulerUtil.scheduleGlobalRepeating(this, BlockListener::clearCache, 6000, 6000);
 
         listen(new BlockListener());
     }

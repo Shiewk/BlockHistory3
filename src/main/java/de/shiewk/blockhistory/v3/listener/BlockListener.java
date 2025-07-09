@@ -3,10 +3,10 @@ package de.shiewk.blockhistory.v3.listener;
 import de.shiewk.blockhistory.v3.BlockHistoryPlugin;
 import de.shiewk.blockhistory.v3.history.BlockHistoryElement;
 import de.shiewk.blockhistory.v3.history.BlockHistoryType;
+import de.shiewk.blockhistory.v3.util.SchedulerUtil;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -25,13 +25,15 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 
 public final class BlockListener implements Listener {
 
-    private static final Object2ObjectOpenHashMap<UUID, UUID> igniters = new Object2ObjectOpenHashMap<>();
-    private static final Object2ObjectOpenHashMap<Block, UUID> blocks = new Object2ObjectOpenHashMap<>();
+    private static final Map<UUID, UUID> igniters = BlockHistoryPlugin.isFolia ? new ConcurrentHashMap<>() : new Object2ObjectOpenHashMap<>();
+    private static final Map<Block, UUID> blocks = BlockHistoryPlugin.isFolia ? new ConcurrentHashMap<>() : new Object2ObjectOpenHashMap<>();
 
     public static void clearCache() {
         igniters.clear();
@@ -52,7 +54,7 @@ public final class BlockListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onBucketEmptied(PlayerBucketEmptyEvent event){
-        Bukkit.getScheduler().scheduleSyncDelayedTask(BlockHistoryPlugin.instance(), () -> {
+        SchedulerUtil.scheduleGlobal(BlockHistoryPlugin.instance(), () -> {
             final Block block = event.getBlock();
             createAndAddEntry(BlockHistoryType.EMPTY_BUCKET, event.getPlayer(), block);
         });
